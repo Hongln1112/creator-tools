@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sound Effects Synthesizer · Design Audio Online</title>
+<meta name="description" content="Design your own sound effects with a tone or noise source, pitch sweep, envelope and filter. Preview instantly and download WAV.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230ea5e9'/%3E%3Cpath d='M11 20V12l6-4v16zM21 11a5 5 0 0 1 0 10' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#f4f5f7; --panel:#ffffff; --line:#e4e6eb; --ink:#1a1d21; --muted:#6b7280;
+    --brand:#0ea5e9; --brand-d:#0284c7; --ok:#16a34a; --danger:#e11d48;
+    --rad:16px; --shadow:0 1px 3px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.05);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,sans-serif;line-height:1.6;min-height:100vh}
+  .wrap{max-width:1120px;margin:0 auto;padding:18px 20px 80px}
+
+  .nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:16px;background:#111;color:#fff;border-radius:14px;padding:12px 18px;margin-bottom:22px}
+  .nav .brand{font-weight:700;font-size:15px;display:flex;align-items:center;gap:9px;text-decoration:none;color:#fff;white-space:nowrap}
+  .nav .brand svg{flex-shrink:0}
+  .nav .links{display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .nav .links::-webkit-scrollbar{display:none}
+  .nav a{color:#cbd5e1;text-decoration:none;font-size:13px;padding:7px 11px;border-radius:9px;transition:.15s;white-space:nowrap}
+  .nav a:hover{background:rgba(255,255,255,.08);color:#fff}
+  .nav a.on{background:#fff;color:#111;font-weight:600}
+  .nav .grow{flex:1}
+
+  header .crumb{font-size:12.5px;color:var(--muted);margin-bottom:6px}
+  header .crumb a{color:var(--muted);text-decoration:none}
+  header h1{font-size:25px;font-weight:700}
+  header .tag{color:var(--muted);font-size:13.5px;margin-top:4px;margin-bottom:22px}
+
+  .layout{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
+  @media(max-width:900px){.layout{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--rad);box-shadow:var(--shadow);overflow:hidden}
+  .sect{padding:18px 20px}
+  .sect+.sect{border-top:1px solid var(--line)}
+  .sect h3{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+  .sect h3::before{content:'';width:3px;height:12px;border-radius:2px;background:var(--brand)}
+
+  .field{margin-bottom:12px}
+  .field .lab{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+  .field .lab span{color:var(--muted);font-size:12px}
+  input[type=range]{-webkit-appearance:none;width:100%;height:5px;background:#e2e6ec;border-radius:3px;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:#fff;border:2px solid var(--brand);cursor:pointer}
+
+  .seg{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;background:#eef1f6;border-radius:12px;padding:4px}
+  .seg button{border:none;background:transparent;padding:9px 4px;border-radius:9px;font-size:12.5px;color:var(--muted);cursor:pointer;font-weight:600;transition:.15s}
+  .seg button.on{background:#fff;color:var(--brand-d);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  #waveSeg{grid-template-columns:repeat(4,1fr)}
+
+  .sounds{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  @media(max-width:1000px){.sounds{grid-template-columns:repeat(4,1fr)}}
+  @media(max-width:640px){.sounds{grid-template-columns:repeat(2,1fr)}}
+  .presets-bar{background:var(--panel);border:1px solid var(--line);border-radius:var(--rad);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px}
+  .pb-head{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
+  .pb-head h2{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px;margin:0}
+  .pb-head h2::before{content:'';width:3px;height:12px;border-radius:2px;background:var(--brand)}
+  .pb-head p{font-size:12.5px;color:var(--muted);margin:0}
+  .s-item{border:1px solid var(--line);border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;background:#fff;transition:.15s}
+  .s-item .sic{width:38px;height:38px;margin:0 auto 8px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;background:#e0f2fe}
+  .s-item .nm{font-size:12.5px;font-weight:600;color:var(--ink)}
+  .s-item .ds{font-size:10.5px;color:var(--muted);margin-top:2px}
+  .s-item.on{border-color:var(--brand);box-shadow:0 0 0 2px rgba(14,165,233,.25)}
+
+  .seq-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin-top:14px}
+  .seq-ops{display:inline-flex;gap:6px;margin-left:auto}
+  .seq-grid .stp{aspect-ratio:1;border-radius:9px;background:#eef1f6;border:1px solid #dfe4ec;cursor:pointer;transition:.12s}
+  .seq-grid .stp:hover{background:#e2e8f0}
+  .seq-grid .stp.on{background:var(--brand);border-color:var(--brand);box-shadow:0 3px 10px rgba(14,165,233,.35)}
+  .seq-grid .stp.on:hover{background:#0ea5e9}
+
+  .btns{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  .btn{flex:1;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+  .btn.play{background:var(--brand);color:#fff}
+  .btn.play:hover{background:var(--brand-d)}
+  .btn.play.playing{background:var(--danger)}
+  .btn.dl{background:var(--ok);color:#fff}
+
+  .stage{display:flex;flex-direction:column;gap:14px}
+  .stage .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--rad);box-shadow:var(--shadow);padding:18px 20px}
+  .export-bar{display:flex;gap:10px}
+  .stage .card h3{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+  .stage .card h3::before{content:'';width:3px;height:12px;border-radius:2px;background:var(--brand)}
+  .wave-box{background:#0f172a;border-radius:16px;padding:18px;min-height:240px;display:flex;align-items:center;justify-content:center;position:relative}
+  .wave-box canvas{width:100%;height:170px;display:block}
+  .wave-box .idle{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:9px;color:#64748b;font-size:13.5px;white-space:nowrap}
+  .meta{background:#0b0f19;border-radius:12px;padding:12px 14px;font-size:12.5px;color:#7dd3fc;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+  .ios-hint{font-size:12px;color:#94a3b8;text-align:center;margin-top:8px;display:none}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);background:#111;color:#fff;padding:11px 18px;border-radius:12px;font-size:13.5px;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:.25s;z-index:100}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.ok{background:var(--ok)}
+.foot{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;justify-content:space-between;padding-top:20px;margin-top:34px;border-top:1px solid #e4e6eb;color:#6b7280;font-size:13px}
+  .foot a{color:#6b7280;text-decoration:none;transition:.15s}
+  .foot a:hover{color:#4f8ef7}
+  .foot .fn{font-weight:700;color:#1a1d21}
+  
+  /* 工具页正文 */
+  .doc{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.05);padding:24px 26px;margin:24px auto 0;max-width:820px}
+  .doc h2{font-size:17px;font-weight:700;margin:20px 0 10px;display:flex;align-items:center;gap:8px}
+  .doc h2::before{content:"";width:3px;height:14px;border-radius:2px;background:var(--brand)}
+  .doc h2:first-child{margin-top:0}
+  .doc h3{font-size:14.5px;font-weight:700;margin:12px 0 6px;color:var(--ink)}
+  .doc p{color:#3a3f47;font-size:14.5px;margin-bottom:10px;line-height:1.7}
+  .doc ul{margin:0 0 10px 20px;color:#3a3f47;font-size:14.5px}
+  .doc li{margin-bottom:5px}
+  .doc code{background:#eef1f6;padding:2px 6px;border-radius:6px;font-size:13px}
+  </style>
+  <link rel="canonical" href="https://creator-tools.vercel.app/sound-effects.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Creator Tools">
+  <meta property="og:title" content="Sound Effects Synthesizer · Design Audio Online">
+  <meta property="og:description" content="Design your own sound effects with a tone or noise source, pitch sweep, envelope and filter. Preview instantly and download WAV.">
+  <meta property="og:url" content="https://creator-tools.vercel.app/sound-effects.html">
+  <meta name="twitter:card" content="summary">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Sound Effects Synthesizer","url":"https://creator-tools.vercel.app/sound-effects.html","applicationCategory":"DesignApplication","operatingSystem":"Any","description":"Design your own sound effects with a tone or noise source, pitch sweep, envelope and filter. Preview instantly and download WAV."}
+  </script>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav">
+    <a class="brand" href="index.html"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#4f8ef7" stroke-width="2" stroke-linecap="round"><path d="M12 2 4 7l8 5 8-5z"/><path d="M4 12l8 5 8-5"/><path d="M4 17l8 5 8-5"/></svg>Creator Tools</a>
+    <span class="grow"></span>
+    <span class="links">
+      <a href="index.html">Home</a>
+      <a href="gradient-generator.html">Gradient</a>
+      <a href="svg-pattern.html">Pattern</a>
+      <a href="logo-badge.html">Logo</a>
+      <a href="cover-maker.html">Cover</a>
+      <a href="watermark-maker.html">Watermark</a>
+      <a href="palette-generator.html">Palette</a>
+      <a href="sound-effects.html" class="on">Sound</a>
+      <a href="chart-maker.html">Chart</a>
+      <a href="qr-code.html">QR</a>
+      <a href="box-shadow.html">Shadow</a>
+</span>
+  </div>
+
+  <header>
+    <div class="crumb"><a href="index.html">Creator Tools</a> / Sound Effects Synthesizer</div>
+    <h1>Sound Effects Synthesizer</h1>
+    <p class="tag">Design your own sound with a source, pitch sweep, envelope and filter · preview instantly · export WAV</p>
+  </header>
+
+  <div class="presets-bar">
+    <div class="pb-head">
+      <h2>Presets</h2>
+      <p>Pick a preset to load its settings, then fine-tune below.</p>
+    </div>
+    <div class="sounds" id="presets"></div>
+  </div>
+
+  <div class="layout">
+    <div class="panel ctrl">
+      <div class="sect">
+        <h3>Source</h3>
+        <div class="seg" id="srcSeg">
+          <button data-s="tone" class="on">Tone</button>
+          <button data-s="noise">Noise</button>
+        </div>
+        <div class="field" style="margin:12px 0 0">
+          <div class="lab"><span>Waveform</span></div>
+          <div class="seg" id="waveSeg">
+            <button data-w="sine" class="on">Sine</button>
+            <button data-w="square">Square</button>
+            <button data-w="sawtooth">Saw</button>
+            <button data-w="triangle">Tri</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sect" id="pitchSect">
+        <h3>Pitch</h3>
+        <div class="field">
+          <div class="lab"><span>Start frequency</span><span id="v-f0">880 Hz</span></div>
+          <input type="range" id="f0" min="40" max="4000" step="10" value="880">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <div class="lab"><span>End frequency</span><span id="v-f1">440 Hz</span></div>
+          <input type="range" id="f1" min="40" max="4000" step="10" value="440">
+        </div>
+      </div>
+
+      <div class="sect">
+        <h3>Timing</h3>
+        <div class="field">
+          <div class="lab"><span>Duration</span><span id="v-dur">0.30s</span></div>
+          <input type="range" id="dur" min="40" max="2000" step="10" value="300">
+        </div>
+        <div class="field">
+          <div class="lab"><span>Attack</span><span id="v-att">0.010s</span></div>
+          <input type="range" id="attack" min="1" max="500" step="1" value="10">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <div class="lab"><span>Release</span><span id="v-rel">0.080s</span></div>
+          <input type="range" id="release" min="10" max="500" step="1" value="80">
+        </div>
+      </div>
+
+      <div class="sect" id="filterSect">
+        <h3>Filter</h3>
+        <div class="seg" id="filtSeg">
+          <button data-f="lowpass" class="on">Low-pass</button>
+          <button data-f="highpass">High-pass</button>
+          <button data-f="bandpass">Band</button>
+        </div>
+        <div class="field" style="margin-top:12px;margin-bottom:0">
+          <div class="lab"><span>Cutoff</span><span id="v-cut">1200 Hz</span></div>
+          <input type="range" id="cut" min="100" max="8000" step="50" value="1200">
+        </div>
+      </div>
+
+      <div class="sect" id="modSect">
+        <h3>Modulation</h3>
+        <div class="seg" id="modSeg">
+          <button data-md="off" class="on">Off</button>
+          <button data-md="on">On</button>
+        </div>
+        <div class="field" style="margin-top:12px">
+          <div class="lab"><span>Rate</span><span id="v-rate">4 Hz</span></div>
+          <input type="range" id="modRate" min="1" max="20" step="0.5" value="4">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <div class="lab"><span>Depth</span><span id="v-depth">80 Hz</span></div>
+          <input type="range" id="modDepth" min="0" max="600" step="10" value="80">
+        </div>
+      </div>
+
+      <div class="sect">
+        <h3>Volume</h3>
+        <div class="field" style="margin-bottom:0">
+          <div class="lab"><span>Volume</span><span id="v-vol">70%</span></div>
+          <input type="range" id="volume" min="10" max="100" step="1" value="70">
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="wave-box">
+        <canvas id="wave" width="800" height="170"></canvas>
+        <div class="idle" id="idle"><svg viewBox="0 0 24 24" width="18" height="18" fill="#64748b"><path d="M8 5v14l11-7z"/></svg>Press play to preview</div>
+      </div>
+      <div class="export-bar">
+        <button class="btn play" id="playBtn">▶ Play</button>
+        <button class="btn dl" id="download">Download WAV</button>
+        <button class="btn ghost" id="reset">Reset</button>
+      </div>
+      <div class="ios-hint" id="iosHint">iPhone: turn off the side mute switch to hear synthesized audio</div>
+      <div class="meta" id="meta"></div>
+
+      <div class="card" id="seqSect">
+        <h3>Sequence <span class="seq-ops"><button id="seqAll" style="font-size:11.5px;padding:4px 10px;border-radius:8px;background:#eef1f6;color:#475569;border:1px solid #dfe4ec;cursor:pointer">All</button><button id="seqClear" style="font-size:11.5px;padding:4px 10px;border-radius:8px;background:#eef1f6;color:#475569;border:1px solid #dfe4ec;cursor:pointer">Clear</button></span></h3>
+        <p class="hint" style="margin-top:6px">Tap steps to place the sound on a rhythm timeline. All fills every step for even repeats · leave empty to play a single sound.</p>
+        <div class="seq-grid" id="seqGrid"></div>
+        <div class="field" style="margin-top:12px">
+          <div class="lab"><span>Step</span><span id="v-step">0.12s</span></div>
+          <input type="range" id="stepDur" min="20" max="400" step="10" value="120">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+  <section class="doc">
+    <h2>What is sound synthesis?</h2>
+    <p>This tool generates audio with the Web Audio API, turning waveforms, frequencies and envelopes into sound — no samples or files needed. Think of it like mixing a drink: you pick the base ingredients and adjust the amounts until it tastes right.</p>
+    <h2>How to use the synthesizer</h2>
+    <p>Start from a preset sound, then shape it — change the waveform, pitch, length and volume. Use the recipe cards to combine several voices, and arrange them on the sequence timeline to build a short multi-step sound or effect loop. Play to preview, and adjust until it matches your scene.</p>
+    <h2>Exporting</h2>
+    <p><strong>Export WAV</strong> downloads your sound as a file you can drop into a video or game. Because everything is generated on the fly, the same recipe can be tuned and re-exported endlessly.</p>
+    <h2>When to use it</h2>
+    <p>Use it for UI notification sounds, short game effects, app pings, video accents and any place you need a clean synthesized blip without hunting through a sample library.</p>
+  </section>
+<footer class="foot"><span class="fn">Creator Tools</span><span class="flinks"><a href="about.html">About</a> · <a href="contact.html">Contact</a> · <a href="privacy-policy.html">Privacy Policy</a></span><span>&copy; 2026 Creator Tools</span></footer>
+  <div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  var state={src:'tone',wave:'sine',f0:880,f1:440,dur:0.30,attack:0.010,release:0.080,vol:0.7,filter:'lowpass',cut:1200,mod:false,modRate:4,modDepth:80,seq:new Array(16).fill(false),stepDur:0.12};
+  var LS_KEY='ct-sound-v1';
+  var DEFAULTS={src:'tone',wave:'sine',f0:880,f1:440,dur:0.30,attack:0.010,release:0.080,vol:0.7,filter:'lowpass',cut:1200,mod:false,modRate:4,modDepth:80,seq:new Array(16).fill(false),stepDur:0.12};
+  function clone(o){return JSON.parse(JSON.stringify(o));}
+  function syncAll(){
+    setSeg('srcSeg',state.src);
+    setSeg('waveSeg',state.wave);
+    setSeg('filtSeg',state.filter);
+    setSeg('modSeg',state.mod?'on':'off');
+    document.getElementById('f0').value=state.f0;
+    document.getElementById('f1').value=state.f1;
+    document.getElementById('dur').value=Math.round(state.dur*1000);
+    document.getElementById('attack').value=Math.round(state.attack*1000);
+    document.getElementById('release').value=Math.round(state.release*1000);
+    document.getElementById('cut').value=state.cut;
+    document.getElementById('volume').value=Math.round(state.vol*100);
+    document.getElementById('modRate').value=state.modRate;
+    document.getElementById('modDepth').value=state.modDepth;
+    document.getElementById('stepDur').value=Math.round(state.stepDur*1000);
+    document.querySelectorAll('.seq-grid .stp').forEach(function(x){x.classList.toggle('on',!!state.seq[parseInt(x.dataset.i)]);});
+    toggleSections();
+    syncLabels();
+  }
+  function loadState(){
+    try{
+      var raw=localStorage.getItem(LS_KEY);
+      if(raw){
+        state=clone(JSON.parse(raw));
+        if(!Array.isArray(state.seq)||state.seq.length!==16)state.seq=new Array(16).fill(false);
+        syncAll();
+      }
+    }catch(e){}
+  }
+  function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
+  function resetState(){
+    try{localStorage.removeItem(LS_KEY);}catch(e){}
+    state=clone(DEFAULTS);
+    syncAll();
+    drawWave();
+  }
+  var playing=false,ctx=null,nodes=[];
+  var isIOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+  var toastTimer=null;
+  function toast(msg){
+    var t=document.getElementById('toast');
+    t.textContent=msg;t.className='toast show ok';
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){t.className='toast'},1800);
+  }
+
+  var presets=[
+    {key:'click',name:'Click',icon:'🔘',desc:'UI tap',src:'tone',wave:'square',f0:900,f1:400,dur:0.06,attack:0.005,release:0.03},
+    {key:'beep',name:'Beep',icon:'🔔',desc:'Alert tone',src:'tone',wave:'sine',f0:880,f1:880,dur:0.2,attack:0.01,release:0.06},
+    {key:'pew',name:'Pew',icon:'📡',desc:'Laser shot',src:'tone',wave:'sawtooth',f0:600,f1:1500,dur:0.22,attack:0.005,release:0.05},
+    {key:'boing',name:'Boing',icon:'🪀',desc:'Springy bounce',src:'tone',wave:'sine',f0:180,f1:75,dur:0.4,attack:0.01,release:0.1},
+    {key:'blip',name:'Blip',icon:'💧',desc:'Water drop',src:'tone',wave:'sine',f0:1300,f1:500,dur:0.1,attack:0.003,release:0.04},
+    {key:'zap',name:'Zap',icon:'⚡',desc:'Electric spark',src:'noise',f0:0,f1:0,dur:0.12,attack:0.002,release:0.05,filter:'highpass',cut:3500},
+    {key:'boom',name:'Boom',icon:'💥',desc:'Explosion',src:'noise',f0:0,f1:0,dur:1.2,attack:0.01,release:0.4,filter:'lowpass',cut:400},
+    {key:'whoosh',name:'Whoosh',icon:'🌀',desc:'Air sweep',src:'noise',f0:0,f1:0,dur:0.5,attack:0.08,release:0.3,filter:'bandpass',cut:1000},
+    {key:'knock',name:'Knock',icon:'🚪',desc:'Door knock',src:'tone',wave:'sine',f0:95,f1:60,dur:0.12,attack:0.004,release:0.05,seq:[true,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false]},
+    {key:'power',name:'Power',icon:'⬆️',desc:'Power-up',src:'tone',wave:'sine',f0:500,f1:1300,dur:0.4,attack:0.01,release:0.12},
+    {key:'error',name:'Error',icon:'⛔',desc:'Error tone',src:'tone',wave:'square',f0:220,f1:170,dur:0.28,attack:0.008,release:0.08},
+    {key:'riser',name:'Riser',icon:'📈',desc:'Riser sweep',src:'tone',wave:'sawtooth',f0:300,f1:1600,dur:0.8,attack:0.05,release:0.2}
+  ];
+
+  function setSeg(id,val){
+    document.querySelectorAll('#'+id+' button').forEach(function(x){x.classList.toggle('on',x.dataset.s===val||x.dataset.w===val||x.dataset.f===val||x.dataset.md===val)});
+  }
+  function applyPreset(p){
+    state.src=p.src;state.wave=p.wave;state.f0=p.f0;state.f1=p.f1;state.dur=p.dur;state.attack=p.attack;state.release=p.release;
+    if(p.filter)state.filter=p.filter;
+    if(p.cut)state.cut=p.cut;
+    state.mod=!!p.mod;
+    if(p.modRate!==undefined)state.modRate=p.modRate;
+    if(p.modDepth!==undefined)state.modDepth=p.modDepth;
+    state.seq=(p.seq)?p.seq.slice(0,16):new Array(16).fill(false);
+    document.querySelectorAll('.seq-grid .stp').forEach(function(x){
+      x.classList.toggle('on',!!state.seq[parseInt(x.dataset.i)]);
+    });
+    setSeg('srcSeg',state.src);
+    setSeg('waveSeg',state.wave);
+    setSeg('filtSeg',state.filter);
+    setSeg('modSeg',state.mod?'on':'off');
+    document.getElementById('f0').value=state.f0;
+    document.getElementById('f1').value=state.f1;
+    document.getElementById('dur').value=Math.round(state.dur*1000);
+    document.getElementById('attack').value=Math.round(state.attack*1000);
+    document.getElementById('release').value=Math.round(state.release*1000);
+    document.getElementById('cut').value=state.cut;
+    document.getElementById('modRate').value=state.modRate;
+    document.getElementById('modDepth').value=state.modDepth;
+    toggleSections();
+    syncLabels();
+    document.querySelectorAll('.s-item').forEach(function(x){x.classList.toggle('on',x.dataset.k===p.key)});
+    playSound();
+  }
+
+  function buildPresets(){
+    var box=document.getElementById('presets');
+    presets.forEach(function(p){
+      var d=document.createElement('div');
+      d.className='s-item';d.dataset.k=p.key;
+      d.innerHTML='<div class="sic">'+p.icon+'</div><div class="nm">'+p.name+'</div><div class="ds">'+p.desc+'</div>';
+      d.addEventListener('click',function(){applyPreset(p)});
+      box.appendChild(d);
+    });
+  }
+
+  function toggleSections(){
+    document.getElementById('pitchSect').style.display=state.src==='tone'?'':'none';
+    document.getElementById('filterSect').style.display=state.src==='noise'?'':'none';
+    document.getElementById('modSect').style.display=state.src==='tone'?'':'none';
+  }
+
+  function syncLabels(){
+    document.getElementById('v-f0').textContent=state.f0+' Hz';
+    document.getElementById('v-f1').textContent=state.f1+' Hz';
+    document.getElementById('v-dur').textContent=state.dur.toFixed(2)+'s';
+    document.getElementById('v-att').textContent=state.attack.toFixed(3)+'s';
+    document.getElementById('v-rel').textContent=state.release.toFixed(3)+'s';
+    document.getElementById('v-cut').textContent=state.cut+' Hz';
+    document.getElementById('v-vol').textContent=Math.round(state.vol*100)+'%';
+    document.getElementById('v-rate').textContent=state.modRate+' Hz';
+    document.getElementById('v-depth').textContent=state.modDepth+' Hz';
+    document.getElementById('v-step').textContent=state.stepDur.toFixed(2)+'s';
+    saveState();
+  }
+
+  function buildSeqGrid(){
+    var box=document.getElementById('seqGrid');
+    for(var i=0;i<16;i++){
+      var d=document.createElement('div');
+      d.className='stp'+(state.seq[i]?' on':'');
+      d.dataset.i=i;
+      d.addEventListener('click',function(){
+        var i=parseInt(this.dataset.i);
+        state.seq[i]=!state.seq[i];
+        this.classList.toggle('on');
+        drawWave();
+      });
+      box.appendChild(d);
+    }
+  }
+
+  function metaText(){
+    var m=state.src==='tone'
+      ?'tone · '+state.wave+' · '+state.f0+'→'+state.f1+' Hz'
+      :'noise · '+state.filter+' '+state.cut+' Hz';
+    m+=' · '+(state.dur*1000).toFixed(0)+'ms';
+    var seqOn=state.seq.some(function(b){return b});
+    if(seqOn){
+      var cnt=state.seq.filter(function(b){return b}).length;
+      m+=' · seq '+cnt+'/16';
+    }
+    if(state.mod&&state.modDepth>0)m+=' · mod '+state.modRate+'Hz';
+    return m;
+  }
+
+  function ensureCtx(){
+    if(!ctx){
+      var AC=window.AudioContext||window.webkitAudioContext;
+      ctx=new AC();
+    }
+    if(ctx.state==='suspended')ctx.resume();
+    return ctx;
+  }
+  function noiseBuffer(dur){
+    var sr=ctx.sampleRate;
+    var buf=ctx.createBuffer(1,sr*dur,sr);
+    var data=buf.getChannelData(0);
+    for(var i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+    return buf;
+  }
+
+  function playSound(){
+    if(playing)stopPlay();
+    ensureCtx();
+    playing=true;
+    var btn=document.getElementById('playBtn');
+    btn.textContent='■ Stop';btn.classList.add('playing');
+    document.getElementById('idle').style.display='none';
+    drawWave();
+
+    var t0=ctx.currentTime;
+    var dur=state.dur;
+    var seqOn=state.seq.some(function(b){return b});
+    var master=ctx.createGain();master.gain.value=state.vol;master.connect(ctx.destination);
+    var att=Math.max(0.002,state.attack),rel=Math.min(state.release,dur*0.5);
+    var total;
+    if(seqOn){
+      for(var i=0;i<16;i++)if(state.seq[i])buildOne(master,t0+i*state.stepDur,dur,att,rel);
+      total=15*state.stepDur+dur;
+    }else{
+      buildOne(master,t0,dur,att,rel);
+      total=dur;
+    }
+    document.getElementById('meta').textContent='Playing · '+metaText();
+    setTimeout(function(){if(playing)stopPlay()},total*1000+200);
+  }
+  function buildOne(master,st,dur,att,rel){
+    var g=ctx.createGain();
+    g.gain.setValueAtTime(0.0001,st);
+    g.gain.exponentialRampToValueAtTime(1,st+att);
+    g.gain.exponentialRampToValueAtTime(0.0001,st+dur-rel);
+    if(state.src==='tone'){
+      var o=ctx.createOscillator();o.type=state.wave;
+      o.frequency.setValueAtTime(state.f0,st);
+      if(state.f1!==state.f0)o.frequency.exponentialRampToValueAtTime(Math.max(1,state.f1),st+dur);
+      if(state.mod&&state.modDepth>0){
+        var lfo=ctx.createOscillator();lfo.frequency.value=state.modRate;
+        var lg=ctx.createGain();lg.gain.value=state.modDepth;
+        lfo.connect(lg);lg.connect(o.frequency);
+        lfo.start(st);lfo.stop(st+dur+0.1);nodes.push(lfo);
+      }
+      o.connect(g);g.connect(master);o.start(st);o.stop(st+dur+0.1);nodes.push(o);
+    }else{
+      var src=ctx.createBufferSource();src.buffer=noiseBuffer(dur);
+      var bp=ctx.createBiquadFilter();bp.type=state.filter;bp.frequency.value=state.cut;
+      src.connect(bp);bp.connect(g);g.connect(master);src.start(st);nodes.push(src);
+    }
+  }
+  function stopPlay(){
+    playing=false;
+    nodes.forEach(function(n){try{n.stop()}catch(e){}});nodes=[];
+    var btn=document.getElementById('playBtn');
+    btn.textContent='▶ Play';btn.classList.remove('playing');
+    drawIdle();
+  }
+
+  function drawWave(){
+    var c=document.getElementById('wave');var g=c.getContext('2d');
+    var W=c.width,H=c.height;
+    g.clearRect(0,0,W,H);
+    g.strokeStyle='#22d3ee';g.lineWidth=2;g.beginPath();
+    var dur=state.dur;
+    var seqOn=state.seq.some(function(b){return b});
+    var f0=state.f0,f1=state.f1,phase=0;
+    var att=Math.max(0.002,state.attack),rel=Math.min(state.release,dur*0.5);
+    var modOn=state.src==='tone'&&state.mod&&state.modDepth>0;
+    var ref=seqOn?state.stepDur:dur;
+    var total=seqOn?(15*state.stepDur+dur):dur;
+    for(var x=0;x<W;x++){
+      var t=x/W*total;
+      var k=Math.floor(t/ref),lt=t-k*ref;
+      var v;
+      if(state.src==='noise'){
+        v=Math.random()*2-1;
+      }else{
+        var f=f0+(f1-f0)*(Math.min(lt,dur)/dur);
+        if(modOn)f+=state.modDepth*Math.sin(2*Math.PI*state.modRate*t);
+        if(state.wave==='sine')v=Math.sin(phase*Math.PI*2);
+        else if(state.wave==='square')v=Math.sin(phase*Math.PI*2)>=0?1:-1;
+        else if(state.wave==='sawtooth')v=2*(phase%1)-1;
+        else v=2*Math.abs(2*(phase%1)-1)-1;
+        phase+=f*total/W;
+      }
+      var env=1;
+      if(lt<att)env=lt/att;
+      if(lt>dur-rel)env=Math.max(0,(dur-lt)/rel);
+      if(lt>dur)env=0;
+      if(seqOn&&(!state.seq[k]))env=0;
+      var y=H/2-v*env*H*0.4;
+      x?g.lineTo(x,y):g.moveTo(x,y);
+    }
+    g.stroke();
+  }
+  function drawIdle(){
+    var c=document.getElementById('wave');var g=c.getContext('2d');
+    g.clearRect(0,0,c.width,c.height);
+    document.getElementById('idle').style.display='';
+  }
+
+  document.getElementById('playBtn').addEventListener('click',function(){
+    if(playing)stopPlay();else playSound();
+  });
+
+  document.getElementById('srcSeg').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    state.src=b.dataset.s;setSeg('srcSeg',state.src);toggleSections();syncLabels();drawWave();
+  });
+  document.getElementById('waveSeg').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    state.wave=b.dataset.w;setSeg('waveSeg',state.wave);drawWave();
+  });
+  document.getElementById('filtSeg').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    state.filter=b.dataset.f;setSeg('filtSeg',state.filter);
+  });
+
+  document.getElementById('f0').addEventListener('input',function(){state.f0=parseFloat(this.value);syncLabels();drawWave();});
+  document.getElementById('f1').addEventListener('input',function(){state.f1=parseFloat(this.value);syncLabels();drawWave();});
+  document.getElementById('dur').addEventListener('input',function(){state.dur=parseFloat(this.value)/1000;syncLabels();drawWave();});
+  document.getElementById('attack').addEventListener('input',function(){state.attack=parseFloat(this.value)/1000;syncLabels();drawWave();});
+  document.getElementById('release').addEventListener('input',function(){state.release=parseFloat(this.value)/1000;syncLabels();drawWave();});
+  document.getElementById('cut').addEventListener('input',function(){state.cut=parseFloat(this.value);syncLabels();});
+  document.getElementById('volume').addEventListener('input',function(){state.vol=parseFloat(this.value)/100;syncLabels();});
+  document.getElementById('modSeg').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    state.mod=b.dataset.md==='on';setSeg('modSeg',b.dataset.md);drawWave();
+  });
+  document.getElementById('modRate').addEventListener('input',function(){state.modRate=parseFloat(this.value);syncLabels();drawWave();});
+  document.getElementById('modDepth').addEventListener('input',function(){state.modDepth=parseFloat(this.value);syncLabels();drawWave();});
+
+  document.getElementById('seqAll').addEventListener('click',function(){
+    state.seq.fill(true);
+    document.querySelectorAll('.seq-grid .stp').forEach(function(x){x.classList.add('on')});
+    drawWave();
+  });
+  document.getElementById('seqClear').addEventListener('click',function(){
+    state.seq.fill(false);
+    document.querySelectorAll('.seq-grid .stp').forEach(function(x){x.classList.remove('on')});
+    drawWave();
+  });
+  document.getElementById('stepDur').addEventListener('input',function(){state.stepDur=parseFloat(this.value)/1000;syncLabels();drawWave();});
+
+  document.getElementById('download').addEventListener('click',function(){
+    var AC=window.AudioContext||window.webkitAudioContext;
+    var sr=(ctx&&ctx.sampleRate)||44100;
+    var dur=state.dur;
+    var seqOn=state.seq.some(function(b){return b});
+    var total=seqOn?(15*state.stepDur+dur):dur;
+    var offline=new OfflineAudioContext(1,Math.floor(sr*total),sr);
+    var master=offline.createGain();master.gain.value=state.vol;master.connect(offline.destination);
+    var att=Math.max(0.002,state.attack),rel=Math.min(state.release,dur*0.5);
+    function one(st){
+      var g=offline.createGain();
+      g.gain.setValueAtTime(0.0001,st);
+      g.gain.exponentialRampToValueAtTime(1,st+att);
+      g.gain.exponentialRampToValueAtTime(0.0001,st+dur-rel);
+      if(state.src==='tone'){
+        var o=offline.createOscillator();o.type=state.wave;
+        o.frequency.setValueAtTime(state.f0,st);
+        if(state.f1!==state.f0)o.frequency.exponentialRampToValueAtTime(Math.max(1,state.f1),st+dur);
+        if(state.mod&&state.modDepth>0){
+          var lfo=offline.createOscillator();lfo.frequency.value=state.modRate;
+          var lg=offline.createGain();lg.gain.value=state.modDepth;
+          lfo.connect(lg);lg.connect(o.frequency);
+          lfo.start(st);lfo.stop(st+dur+0.1);
+        }
+        o.connect(g);g.connect(master);o.start(st);o.stop(st+dur+0.1);
+      }else{
+        var b=offline.createBuffer(1,offline.sampleRate*dur,offline.sampleRate);
+        var d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+        var s=offline.createBufferSource();s.buffer=b;
+        var f=offline.createBiquadFilter();f.type=state.filter;f.frequency.value=state.cut;
+        s.connect(f);f.connect(g);g.connect(master);s.start(st);
+      }
+    }
+    var t=offline.currentTime;
+    if(seqOn){
+      for(var i=0;i<16;i++)if(state.seq[i])one(t+i*state.stepDur);
+    }else{
+      one(t);
+    }
+    offline.startRendering().then(function(rendered){
+      var buffer=rendered.getChannelData(0);
+      var wav=encodeWAV(buffer,sr);
+      var blob=new Blob([wav],{type:'audio/wav'});
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a');
+      a.href=url;a.download='sound-'+Date.now()+'.wav';
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(function(){URL.revokeObjectURL(url)},200);
+      toast('WAV downloaded ✓');
+    });
+  });
+
+  function encodeWAV(buffer,sr){
+    var n=buffer.length;
+    var buf=new ArrayBuffer(44+n*2);
+    var view=new DataView(buf);
+    var ws=function(o,s){for(var i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i))};
+    ws(0,'RIFF');view.setUint32(4,36+n*2,true);ws(8,'WAVE');
+    ws(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);
+    view.setUint32(24,sr,true);view.setUint32(28,sr*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);
+    ws(36,'data');view.setUint32(40,n*2,true);
+    var off=44;
+    for(var i=0;i<n;i++){var s2=Math.max(-1,Math.min(1,buffer[i]));view.setInt16(off,s2<0?s2*0x8000:s2*0x7FFF,true);off+=2;}
+    return buf;
+  }
+
+  document.getElementById('reset').addEventListener('click',function(){
+    resetState();
+    document.getElementById('meta').textContent='Tone presets and custom settings · '+metaText();
+    toast('Settings reset ✓');
+  });
+
+  loadState();
+  buildPresets();
+  buildSeqGrid();
+  drawIdle();
+  syncLabels();
+  toggleSections();
+  document.getElementById('meta').textContent='Tone presets and custom settings · '+metaText();
+  if(isIOS)document.getElementById('iosHint').style.display='';
+})();
+</script>
+</body>
+</html>

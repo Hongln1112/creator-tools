@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gradient Generator · Create CSS & PNG Gradients Online</title>
+<meta name="description" content="Create linear, radial, conic and mesh gradients with draggable color stops and per-stop opacity. Copy CSS, CSS variables or export HD PNG.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234f8ef7'/%3E%3Cstop offset='1' stop-color='%23ff9f43'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#f4f5f7; --panel:#ffffff; --line:#e4e6eb; --ink:#1a1d21; --muted:#6b7280;
+    --brand:#4f8ef7; --brand-d:#3563d9; --brand-soft:#e9f0fe; --ok:#16a34a;
+    --rad:16px; --shadow:0 1px 3px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.05);
+    --work:#111418; --work-grid:rgba(255,255,255,.07);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,sans-serif;line-height:1.6;min-height:100vh}
+  .wrap{max-width:1120px;margin:0 auto;padding:18px 20px 90px}
+
+  /* 集合站导航 */
+  .nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:16px;background:#111;color:#fff;border-radius:14px;padding:12px 18px;margin-bottom:22px}
+  .nav .brand{font-weight:700;font-size:15px;display:flex;align-items:center;gap:9px;text-decoration:none;color:#fff;white-space:nowrap}
+  .nav .brand svg{flex-shrink:0}
+  .nav .links{display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .nav .links::-webkit-scrollbar{display:none}
+  .nav a{color:#cbd5e1;text-decoration:none;font-size:13px;padding:7px 11px;border-radius:9px;transition:.15s;white-space:nowrap}
+  .nav a:hover{background:rgba(255,255,255,.08);color:#fff}
+  .nav a.on{background:#fff;color:#111;font-weight:600}
+  .nav .grow{flex:1}
+
+  header .crumb{font-size:12.5px;color:var(--muted);margin-bottom:6px}
+  header .crumb a{color:var(--muted);text-decoration:none}
+  header h1{font-size:25px;font-weight:700}
+  header .tag{color:var(--muted);font-size:13.5px;margin-top:4px;margin-bottom:22px}
+
+  .layout{display:grid;grid-template-columns:352px 1fr;gap:22px;align-items:start}
+  @media(max-width:860px){.layout{grid-template-columns:1fr}}
+
+  /* 控制面板：分区块 */
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--rad);box-shadow:var(--shadow);overflow:hidden}
+  .sect{padding:18px 20px}
+  .sect+.sect{border-top:1px solid var(--line)}
+  .sect h3{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+  .sect h3::before{content:"";width:3px;height:12px;border-radius:2px;background:var(--brand)}
+
+  .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:#eef1f6;border-radius:12px;padding:4px}
+  .seg button{border:none;background:transparent;padding:9px 4px;border-radius:9px;font-size:12.5px;color:var(--muted);cursor:pointer;font-weight:600;transition:.15s}
+  .seg button.on{background:#fff;color:var(--brand-d);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+
+  .field{margin-bottom:12px}
+  .field .lab{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+  .field .lab span{color:var(--muted);font-size:12px}
+  input[type=range]{-webkit-appearance:none;width:100%;height:5px;background:#e2e6ec;border-radius:3px;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:#fff;border:2px solid var(--brand);cursor:pointer}
+
+  /* 颜色 stops（带透明度） */
+  .stops{margin-bottom:12px}
+  .stop{display:flex;align-items:center;gap:9px;margin-bottom:10px;padding:9px;border:1px solid var(--line);border-radius:12px;background:#fafbfc}
+  .stop .sw{width:40px;height:40px;border-radius:10px;cursor:pointer;position:relative;flex-shrink:0;overflow:hidden;border:2px solid var(--line)}
+  .stop .sw input{position:absolute;inset:-4px;opacity:0;cursor:pointer}
+  .stop .poswrap{flex:1}
+  .stop .poswrap .row{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-bottom:3px}
+  .stop .poswrap input[type=range]{width:100%}
+  .stop .del{border:none;background:#fde8e8;color:#c0392b;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:15px;flex-shrink:0}
+  .stop .del:disabled{opacity:.3;cursor:not-allowed}
+
+  .btns{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+  .btn{border:none;border-radius:11px;padding:11px 14px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.15s;flex:1}
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.primary:hover{background:var(--brand-d)}
+  .btn.ghost{background:#eef1f6;color:var(--ink)}
+  .btn.ghost:hover{background:#e2e6ec}
+  .btn.dl{background:var(--ok);color:#fff}
+  .btn.full{flex:1 0 100%}
+
+  .presets{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  @media(max-width:500px){.presets{grid-template-columns:repeat(4,1fr)}}
+  .pre{border-radius:10px;height:52px;cursor:pointer;border:2px solid var(--line);transition:.15s}
+  .pre:hover{border-color:var(--brand);transform:scale(1.03)}
+  .pre.on{border-color:var(--brand)}
+
+  /* 深色工作台预览 */
+  .stage{position:sticky;top:24px;display:flex;flex-direction:column;gap:14px}
+  .stage-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .stage-top .lbl{font-size:12px;color:var(--muted);font-weight:600}
+  .workbench{background:var(--work);border-radius:var(--rad);overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 8px 30px rgba(0,0,0,.18);position:relative}
+  .workbench::before{content:"";position:absolute;inset:0;background-image:radial-gradient(var(--work-grid) 1px,transparent 1px);background-size:18px 18px;pointer-events:none}
+  .preview{width:100%;display:block;transition:background .2s}
+  .aspect-btns{display:flex;gap:8px}
+  .aspect-btns .seg{flex:1}
+  .cssbox{background:#0b0f19;border-radius:12px;padding:14px 16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:#7dd3fc;position:relative;word-break:break-all;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+  .cssbox .copy{position:absolute;top:10px;right:10px;border:none;background:rgba(125,211,252,.14);color:#bae6fd;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer}
+  .cssbox .copy.copied{background:var(--ok);color:#fff}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);background:#111;color:#fff;padding:11px 18px;border-radius:12px;font-size:13.5px;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:.25s;z-index:100}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.ok{background:var(--ok)}
+.foot{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;justify-content:space-between;padding-top:20px;margin-top:34px;border-top:1px solid #e4e6eb;color:#6b7280;font-size:13px}
+  .foot a{color:#6b7280;text-decoration:none;transition:.15s}
+  .foot a:hover{color:#4f8ef7}
+  .foot .fn{font-weight:700;color:#1a1d21}
+
+  /* 工具页正文 */
+  .doc{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.05);padding:24px 26px;margin:24px auto 0;max-width:820px}
+  .doc h2{font-size:17px;font-weight:700;margin:20px 0 10px;display:flex;align-items:center;gap:8px}
+  .doc h2::before{content:"";width:3px;height:14px;border-radius:2px;background:var(--brand)}
+  .doc h2:first-child{margin-top:0}
+  .doc h3{font-size:14.5px;font-weight:700;margin:12px 0 6px;color:var(--ink)}
+  .doc p{color:#3a3f47;font-size:14.5px;margin-bottom:10px;line-height:1.7}
+  .doc ul{margin:0 0 10px 20px;color:#3a3f47;font-size:14.5px}
+  .doc li{margin-bottom:5px}
+  .doc code{background:#eef1f6;padding:2px 6px;border-radius:6px;font-size:13px}
+  </style>
+  <link rel="canonical" href="https://creator-tools.vercel.app/gradient-generator.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Creator Tools">
+  <meta property="og:title" content="Gradient Generator · Create CSS &amp; PNG Gradients Online">
+  <meta property="og:description" content="Create linear, radial, conic and mesh gradients with draggable color stops and per-stop opacity. Copy CSS, CSS variables or export HD PNG.">
+  <meta property="og:url" content="https://creator-tools.vercel.app/gradient-generator.html">
+  <meta name="twitter:card" content="summary">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Gradient Generator","url":"https://creator-tools.vercel.app/gradient-generator.html","applicationCategory":"DesignApplication","operatingSystem":"Any","description":"Create linear, radial, conic and mesh gradients with draggable color stops and per-stop opacity. Copy CSS, CSS variables or export HD PNG."}
+  </script>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav">
+    <a class="brand" href="index.html"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#4f8ef7" stroke-width="2" stroke-linecap="round"><path d="M12 2 4 7l8 5 8-5z"/><path d="M4 12l8 5 8-5"/><path d="M4 17l8 5 8-5"/></svg>Creator Tools</a>
+    <span class="grow"></span>
+    <span class="links">
+      <a href="index.html">Home</a>
+      <a href="gradient-generator.html" class="on">Gradient</a>
+      <a href="svg-pattern.html">Pattern</a>
+      <a href="logo-badge.html">Logo</a>
+      <a href="cover-maker.html">Cover</a>
+      <a href="watermark-maker.html">Watermark</a>
+      <a href="palette-generator.html">Palette</a>
+      <a href="sound-effects.html">Sound</a>
+      <a href="chart-maker.html">Chart</a>
+      <a href="qr-code.html">QR</a>
+      <a href="box-shadow.html">Shadow</a>
+</span>
+  </div>
+
+  <header>
+    <div class="crumb"><a href="index.html">Creator Tools</a> / Gradient Generator</div>
+    <h1>Gradient Generator</h1>
+    <p class="tag">Linear, radial, conic &amp; mesh gradients · draggable stops with opacity · copy CSS or export HD PNG</p>
+  </header>
+
+  <div class="layout">
+    <div class="panel ctrl">
+      <div class="sect">
+        <h3>Type</h3>
+        <div class="seg" id="typeSeg" style="grid-template-columns:repeat(4,1fr)">
+          <button data-t="linear" class="on">Linear</button>
+          <button data-t="radial">Radial</button>
+          <button data-t="conic">Conic</button>
+          <button data-t="mesh">Mesh</button>
+        </div>
+        <div id="dirBlock">
+          <div class="seg" id="dirSeg" style="margin-top:12px;grid-template-columns:repeat(5,1fr)">
+            <button data-d="90">→</button>
+            <button data-d="135">↘</button>
+            <button data-d="180">↓</button>
+            <button data-d="0">→</button>
+            <button data-d="-45">↗</button>
+          </div>
+          <div class="field" style="margin-top:12px">
+            <div class="lab"><span>Angle</span><span id="v-angle">135°</span></div>
+            <input type="range" id="angle" min="0" max="360" step="1" value="135">
+          </div>
+        </div>
+        <div id="meshBlock" style="display:none">
+          <div class="field" style="margin-top:12px">
+            <div class="lab"><span>Blob density</span><span id="v-density">4</span></div>
+            <input type="range" id="density" min="3" max="8" step="1" value="4">
+          </div>
+          <button class="btn ghost" id="respread" style="width:100%">↻ Re-spread blobs</button>
+        </div>
+      </div>
+
+      <div class="sect">
+        <h3>Color stops</h3>
+        <div class="stops" id="stops"></div>
+        <div class="btns" style="margin-top:0">
+          <button class="btn ghost" id="addStop">+ Add stop</button>
+          <button class="btn ghost" id="shuffle">Shuffle</button>
+        </div>
+      </div>
+
+      <div class="sect">
+        <h3>Presets</h3>
+        <div class="presets" id="presets"></div>
+      </div>
+
+      <div class="sect">
+        <h3>Export</h3>
+        <div class="btns">
+          <button class="btn dl" id="download">Export PNG</button>
+        </div>
+        <div class="btns" style="margin-top:9px">
+          <button class="btn primary" id="copyCss">Copy CSS</button>
+          <button class="btn ghost" id="copyVar">Copy CSS variable</button>
+        </div>
+        <div class="btns" style="margin-top:9px">
+          <button class="btn ghost" id="reset">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-top">
+        <span class="lbl">Live preview</span>
+      </div>
+      <div class="workbench">
+        <div class="preview" id="preview"></div>
+      </div>
+      <div class="aspect-btns">
+        <div class="seg" id="aspectSeg">
+          <button data-a="16/9" class="on">16:9</button>
+          <button data-a="3/4">3:4</button>
+          <button data-a="1/1">1:1</button>
+          <button data-a="9/16">9:16</button>
+          <button data-a="full">Full</button>
+        </div>
+      </div>
+      <div class="cssbox" id="cssbox"><span id="cssText"></span><button class="copy" id="copyBtn">Copy</button></div>
+    </div>
+  </div>
+
+  <section class="doc">
+    <h2>What is a CSS gradient?</h2>
+    <p>A CSS gradient is a smooth transition between two or more colors, drawn by the browser instead of an image file. Because it is pure CSS, it scales to any size without losing quality, loads instantly, and needs no extra image request. The four types on this page cover most real-world needs:</p>
+    <ul>
+      <li><strong>Linear</strong> — color flows along an angle you choose; ideal for page backgrounds and buttons.</li>
+      <li><strong>Radial</strong> — color radiates from a center point, great for spotlight highlights and glows.</li>
+      <li><strong>Conic</strong> — color sweeps around a point like a clock, used for pie accents and wheel effects.</li>
+      <li><strong>Mesh</strong> — several soft color blobs blend into one another for a rich, painterly look.</li>
+    </ul>
+    <h2>How to use the generator</h2>
+    <p>Pick a type, then set the angle (for linear and conic) or the blob density (for mesh). Click a color swatch to change a stop, drag its <strong>Position</strong> to spread the transition, and lower <strong>Opacity</strong> to soften it. Add up to six stops, or tap <strong>Shuffle</strong> for an instant palette. The live preview updates as you go. Finally, choose an aspect ratio to match your target — 16:9 for banners, 3:4 for posts, 9:16 for stories.</p>
+    <h2>Getting your gradient out</h2>
+    <ul>
+      <li><strong>Copy CSS</strong> — paste the <code>background:</code> value straight into a stylesheet.</li>
+      <li><strong>Copy CSS variable</strong> — save it as a <code>--gradient</code> token you can reuse across components.</li>
+      <li><strong>Export PNG</strong> — download a wide, high-resolution image when you need a file rather than code.</li>
+    </ul>
+    <p>Your last settings are remembered in your browser, so you can close the tab and come back to keep working.</p>
+    <h2>When to use gradients</h2>
+    <p>Gradients are a fast way to add depth and brand color without image assets — as page or section backgrounds, button fills, card accents, hero overlays and social cover art. Since they are CSS, they stay crisp at any resolution and can be animated with transitions.</p>
+  </section>
+</div>
+<footer class="foot"><span class="fn">Creator Tools</span><span class="flinks"><a href="about.html">About</a> · <a href="contact.html">Contact</a> · <a href="privacy-policy.html">Privacy Policy</a></span><span>&copy; 2026 Creator Tools</span></footer>
+  <div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  var state={
+    type:'linear',
+    angle:135,
+    stops:[{c:'#4f8ef7',p:0,a:100},{c:'#7c3aed',p:50,a:100},{c:'#ff9f43',p:100,a:100}],
+    aspect:'16/9',
+    density:4,
+    meshBlobs:[]
+  };
+  var EXPORT_W=1600;
+  var LS_KEY='ct-gradient-v1';
+  var DEFAULTS={type:'linear',angle:135,aspect:'16/9',density:4,stops:[{c:'#4f8ef7',p:0,a:100},{c:'#7c3aed',p:50,a:100},{c:'#ff9f43',p:100,a:100}]};
+  function clone(o){return JSON.parse(JSON.stringify(o));}
+  function loadState(){
+    try{
+      var raw=localStorage.getItem(LS_KEY);
+      if(raw){
+        var d=JSON.parse(raw);
+        ['type','angle','aspect','density'].forEach(function(k){if(d[k]!==undefined)state[k]=d[k];});
+        if(Array.isArray(d.stops)&&d.stops.length>=2){
+          state.stops=d.stops.map(function(s){return {c:s.c,p:Number(s.p),a:Number(s.a)};});
+        }
+      }
+    }catch(e){}
+  }
+  function saveState(){
+    try{localStorage.setItem(LS_KEY,JSON.stringify({type:state.type,angle:state.angle,aspect:state.aspect,density:state.density,stops:state.stops}));}catch(e){}
+  }
+  function resetState(){
+    try{localStorage.removeItem(LS_KEY);}catch(e){}
+    Object.keys(DEFAULTS).forEach(function(k){state[k]=clone(DEFAULTS[k]);});
+    if(state.type==='mesh')genMesh();
+    render();
+  }
+  var toastTimer=null;
+  function toast(msg,ok){
+    var t=document.getElementById('toast');
+    t.textContent=msg;
+    t.className='toast show'+(ok?' ok':'');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){t.className='toast'},1800);
+  }
+
+  // hex → rgba
+  function rgbaStr(hex,alpha){
+    var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+    var a=(alpha/100);
+    return 'rgba('+r+','+g+','+b+','+(a===1?'1':a.toFixed(2))+')';
+  }
+
+  function genMesh(){
+    state.meshBlobs=[];
+    for(var i=0;i<state.density;i++){
+      state.meshBlobs.push({
+        x:Math.round(6+Math.random()*88),
+        y:Math.round(6+Math.random()*88),
+        r:Math.round(22+Math.random()*40),
+        c:state.stops[i%state.stops.length].c
+      });
+    }
+  }
+  function meshCSS(){
+    return state.meshBlobs.map(function(b){
+      return 'radial-gradient(circle at '+b.x+'% '+b.y+'%, '+b.c+' 0%, '+b.c+' 18%, '+b.c+'99 38%, transparent 70%)';
+    }).join(', ');
+  }
+
+  var presets=[
+    ['#4f8ef7','#7c3aed'], ['#ff9f43','#f43f5e'], ['#16a34a','#0ea5e9'],
+    ['#8b5cf6','#ec4899'], ['#f59e0b','#ef4444'], ['#0ea5e9','#22d3ee'],
+    ['#6366f1','#a855f7'], ['#10b981','#84cc16'], ['#f43f5e','#fb923c'],
+    ['#111827','#374151']
+  ];
+
+  function stopStr(s){
+    return rgbaStr(s.c,s.a)+' '+s.p+'%';
+  }
+  function gradientCSS(){
+    if(state.type==='mesh')return meshCSS();
+    var stops=state.stops.slice().sort(function(a,b){return a.p-b.p}).map(stopStr).join(', ');
+    if(state.type==='linear'){
+      return 'linear-gradient('+state.angle+'deg, '+stops+')';
+    }else if(state.type==='radial'){
+      return 'radial-gradient(circle at center, '+stops+')';
+    }else{
+      return 'conic-gradient(from '+state.angle+'deg, '+stops+')';
+    }
+  }
+  function render(){
+    var css=gradientCSS();
+    var pv=document.getElementById('preview');
+    pv.style.background=css;
+    document.getElementById('cssText').textContent='background: '+css+';';
+    document.querySelectorAll('#typeSeg button').forEach(function(b){b.classList.toggle('on',b.dataset.t===state.type)});
+    document.getElementById('dirBlock').style.display=state.type==='mesh'?'none':'';
+    document.getElementById('meshBlock').style.display=state.type==='mesh'?'':'none';
+    document.getElementById('v-angle').textContent=state.angle+'°';
+    document.getElementById('v-density').textContent=state.density;
+    renderStops();
+    renderPresets();
+    saveState();
+  }
+  function renderStops(){
+    var box=document.getElementById('stops');
+    box.innerHTML='';
+    state.stops.forEach(function(s,i){
+      var row=document.createElement('div');row.className='stop';
+      row.innerHTML=
+        '<div class="sw" style="background:'+s.c+'"><input type="color" data-i="'+i+'" value="'+s.c+'"></div>'+
+        '<div class="poswrap">'+
+          '<div class="row"><span>Position</span><span>'+s.p+'%</span></div>'+
+          '<input type="range" data-p="'+i+'" min="0" max="100" step="1" value="'+s.p+'">'+
+          '<div class="row" style="margin-top:5px"><span>Opacity</span><span>'+s.a+'%</span></div>'+
+          '<input type="range" data-a="'+i+'" min="0" max="100" step="1" value="'+s.a+'">'+
+        '</div>'+
+        '<button class="del" data-i="'+i+'" '+(state.stops.length<=2?'disabled':'')+'>×</button>';
+      box.appendChild(row);
+    });
+  }
+  function renderPresets(){
+    var box=document.getElementById('presets');
+    box.innerHTML='';
+    presets.forEach(function(pp){
+      var d=document.createElement('div');
+      d.className='pre';
+      d.style.background='linear-gradient(135deg,'+pp[0]+','+pp[1]+')';
+      d.title=pp[0]+' → '+pp[1];
+      d.addEventListener('click',function(){
+        state.stops=[{c:pp[0],p:0,a:100},{c:pp[1],p:100,a:100}];
+        render();
+      });
+      box.appendChild(d);
+    });
+  }
+  function setAspect(a){
+    var pv=document.getElementById('preview');
+    if(a==='full'){pv.style.aspectRatio='auto';pv.style.minHeight='340px';}
+    else{pv.style.aspectRatio=a;pv.style.minHeight='0';}
+    state.aspect=a;
+    document.querySelectorAll('#aspectSeg button').forEach(function(b){b.classList.toggle('on',b.dataset.a===a)});
+  }
+
+  document.getElementById('typeSeg').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    if(state.type!==b.dataset.t){state.type=b.dataset.t;if(state.type==='mesh')genMesh();render();}
+  });
+  document.getElementById('density').addEventListener('input',function(){state.density=parseInt(this.value);genMesh();render();});
+  document.getElementById('respread').addEventListener('click',function(){genMesh();render();});
+  document.getElementById('dirSeg').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    var deg=parseInt(b.dataset.d);if(isNaN(deg))return;
+    state.angle=deg;document.getElementById('angle').value=deg;render();
+  });
+  document.getElementById('angle').addEventListener('input',function(){state.angle=parseInt(this.value);render();});
+
+  document.getElementById('stops').addEventListener('input',function(e){
+    var t=e.target;
+    if(t.type==='color'){
+      var i=+t.dataset.i;state.stops[i].c=t.value;
+      render();
+    }else if(t.dataset.p!==undefined){
+      var ip=+t.dataset.p;state.stops[ip].p=+t.value;
+      render();
+    }else if(t.dataset.a!==undefined){
+      var ia=+t.dataset.a;state.stops[ia].a=+t.value;
+      render();
+    }
+  });
+  document.getElementById('stops').addEventListener('click',function(e){
+    var del=e.target.closest('.del');if(!del||del.disabled)return;
+    var i=+del.dataset.i;
+    if(state.stops.length<=2)return;
+    state.stops.splice(i,1);render();
+  });
+  document.getElementById('addStop').addEventListener('click',function(){
+    if(state.stops.length>=6)return;
+    state.stops.push({c:'#'+Math.floor(Math.random()*0xffffff).toString(16).padStart(6,'0'),p:50,a:100});
+    render();
+  });
+  document.getElementById('shuffle').addEventListener('click',function(){
+    var n=Math.min(5,2+Math.floor(Math.random()*3));
+    state.stops=[];
+    for(var i=0;i<n;i++){
+      var hex='#'+Math.floor(Math.random()*0xffffff).toString(16).padStart(6,'0');
+      state.stops.push({c:hex,p:Math.round(i/(n-1)*100),a:100});
+    }
+    if(state.type==='mesh')genMesh();
+    render();
+  });
+  document.getElementById('aspectSeg').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    setAspect(b.dataset.a);
+  });
+
+  function exportPNG(){
+    var dims={ '16/9':[EXPORT_W,EXPORT_W*9/16], '3/4':[EXPORT_W,EXPORT_W*4/3], '1/1':[EXPORT_W,EXPORT_W], '9/16':[EXPORT_W*9/16,EXPORT_W] }[state.aspect]||[EXPORT_W,EXPORT_W*9/16];
+    var canvas=document.createElement('canvas');
+    canvas.width=dims[0];canvas.height=dims[1];
+    var ctx=canvas.getContext('2d');
+    if(state.type==='mesh'){
+      ctx.fillStyle=state.meshBlobs[0].c;ctx.fillRect(0,0,dims[0],dims[1]);
+      state.meshBlobs.forEach(function(b){
+        var g=ctx.createRadialGradient(b.x/100*dims[0],b.y/100*dims[1],0,b.x/100*dims[0],b.y/100*dims[1],b.r/100*Math.max(dims[0],dims[1]));
+        g.addColorStop(0,b.c);g.addColorStop(0.18,b.c);g.addColorStop(0.5,b.c+'99');g.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=g;ctx.fillRect(0,0,dims[0],dims[1]);
+      });
+    }else{
+      ctx.fillStyle=gradientCSS();
+      ctx.fillRect(0,0,dims[0],dims[1]);
+    }
+    var a=document.createElement('a');
+    a.download='gradient-'+Date.now()+'.png';
+    a.href=canvas.toDataURL('image/png');
+    document.body.appendChild(a);a.click();a.remove();
+    toast('PNG exported ✓',true);
+  }
+  document.getElementById('download').addEventListener('click',exportPNG);
+
+  function copyToClipboard(text,msg){
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(text).then(function(){toast(msg,true)});
+    }else{
+      toast('Copy not supported on this browser');
+    }
+  }
+  document.getElementById('copyCss').addEventListener('click',function(){
+    copyToClipboard('background: '+gradientCSS()+';','CSS copied ✓');
+  });
+  document.getElementById('copyVar').addEventListener('click',function(){
+    copyToClipboard('--gradient: '+gradientCSS()+';','CSS variable copied ✓');
+  });
+  document.getElementById('copyBtn').addEventListener('click',function(){
+    copyToClipboard('background: '+gradientCSS()+';','CSS copied ✓');
+  });
+  document.getElementById('reset').addEventListener('click',function(){
+    resetState();
+    document.getElementById('angle').value=state.angle;
+    toast('Settings reset ✓',true);
+  });
+
+  genMesh();
+  loadState();
+  render();
+  setAspect(state.aspect);
+})();
+</script>
+</body>
+</html>
