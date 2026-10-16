@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://creator-tools.vercel.app/</loc><priority>1.0</priority></url>
-  <url><loc>https://creator-tools.vercel.app/gradient-generator.html</loc><priority>0.9</priority></url>
-  <url><loc>https://creator-tools.vercel.app/svg-pattern.html</loc><priority>0.8</priority></url>
-  <url><loc>https://creator-tools.vercel.app/logo-badge.html</loc><priority>0.8</priority></url>
-  <url><loc>https://creator-tools.vercel.app/cover-maker.html</loc><priority>0.8</priority></url>
-  <url><loc>https://creator-tools.vercel.app/watermark-maker.html</loc><priority>0.8</priority></url>
-  <url><loc>https://creator-tools.vercel.app/palette-generator.html</loc><priority>0.8</priority></url>
-  <url><loc>https://creator-tools.vercel.app/sound-effects.html</loc><priority>0.8</priority></url>
-  <url><loc>https://creator-tools.vercel.app/chart-maker.html</loc><priority>0.8</priority></url>
-  <url><loc>https://creator-tools.vercel.app/qr-code.html</loc><priority>0.8</priority></url>
-  <url><loc>https://creator-tools.vercel.app/box-shadow.html</loc><priority>0.8</priority></url>
-  <url><loc>https://creator-tools.vercel.app/about.html</loc><priority>0.5</priority></url>
-  <url><loc>https://creator-tools.vercel.app/contact.html</loc><priority>0.3</priority></url>
-  <url><loc>https://creator-tools.vercel.app/privacy-policy.html</loc><priority>0.3</priority></url>
+  <url><loc>https://creator-tools-eta.vercel.app/</loc><priority>1.0</priority></url>
+  <url><loc>https://creator-tools-eta.vercel.app/gradient-generator.html</loc><priority>0.9</priority></url>
+  <url><loc>https://creator-tools-eta.vercel.app/svg-pattern.html</loc><priority>0.8</priority></url>
+  <url><loc>https://creator-tools-eta.vercel.app/logo-badge.html</loc><priority>0.8</priority></url>
+  <url><loc>https://creator-tools-eta.vercel.app/cover-maker.html</loc><priority>0.8</priority></url>
+  <url><loc>https://creator-tools-eta.vercel.app/watermark-maker.html</loc><priority>0.8</priority></url>
+  <url><loc>https://creator-tools-eta.vercel.app/palette-generator.html</loc><priority>0.8</priority></url>
+  <url><loc>https://creator-tools-eta.vercel.app/sound-effects.html</loc><priority>0.8</priority></url>
+  <url><loc>https://creator-tools-eta.vercel.app/chart-maker.html</loc><priority>0.8</priority></url>
+  <url><loc>https://creator-tools-eta.vercel.app/qr-code.html</loc><priority>0.8</priority></url>
+  <url><loc>https://creator-tools-eta.vercel.app/box-shadow.html</loc><priority>0.8</priority></url>
+  <url><loc>https://creator-tools-eta.vercel.app/about.html</loc><priority>0.5</priority></url>
+  <url><loc>https://creator-tools-eta.vercel.app/contact.html</loc><priority>0.3</priority></url>
+  <url><loc>https://creator-tools-eta.vercel.app/privacy-policy.html</loc><priority>0.3</priority></url>
 </urlset>
